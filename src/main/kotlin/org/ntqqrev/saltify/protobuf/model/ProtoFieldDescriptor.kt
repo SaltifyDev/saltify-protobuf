@@ -5,6 +5,7 @@ import org.ntqqrev.saltify.protobuf.annotation.DisablePacking
 import org.ntqqrev.saltify.protobuf.annotation.ProtoField
 import org.ntqqrev.saltify.protobuf.annotation.ProtoNumberFlag
 import org.ntqqrev.saltify.protobuf.annotation.ProtoNumberType
+import org.ntqqrev.saltify.protobuf.deserializer.*
 import org.ntqqrev.saltify.protobuf.serializer.*
 import org.ntqqrev.saltify.protobuf.util.varintSize
 import java.lang.invoke.MethodHandles
@@ -42,6 +43,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
     val getter = lookup.unreflect(kProperty.javaGetter)!!
     val setter = lookup.unreflect(kProperty.javaSetter)!!
     val serializer: ProtoFieldSerializer<*>
+    val deserializer: ProtoFieldDeserializer
 
     init {
         field.trySetAccessible()
@@ -52,21 +54,25 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                     ProtoNumberFlag.FIXED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED32.value
                         serializer = IntFixed32Serializer
+                        deserializer = IntFixed32Deserializer
                     }
 
                     ProtoNumberFlag.SIGNED -> {
                         writeTag = fieldNumber shl 3 or WireType.VARINT.value
                         serializer = IntZigzagVarintSerializer
+                        deserializer = IntZigzagVarintDeserializer
                     }
 
                     ProtoNumberFlag.FIXED or ProtoNumberFlag.SIGNED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED32.value
                         serializer = IntZigzagFixed32Serializer
+                        deserializer = IntZigzagFixed32Deserializer
                     }
 
                     else -> {
                         writeTag = fieldNumber shl 3 or WireType.VARINT.value
                         serializer = IntVarintSerializer
+                        deserializer = IntVarintDeserializer
                     }
                 }
                 isRepeated = false
@@ -78,21 +84,25 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                     ProtoNumberFlag.FIXED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED64.value
                         serializer = LongFixed64Serializer
+                        deserializer = LongFixed64Deserializer
                     }
 
                     ProtoNumberFlag.SIGNED -> {
                         writeTag = fieldNumber shl 3 or WireType.VARINT.value
                         serializer = LongZigzagVarintSerializer
+                        deserializer = LongZigzagVarintDeserializer
                     }
 
                     ProtoNumberFlag.FIXED or ProtoNumberFlag.SIGNED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED64.value
                         serializer = LongZigzagFixed64Serializer
+                        deserializer = LongZigzagFixed64Deserializer
                     }
 
                     else -> {
                         writeTag = fieldNumber shl 3 or WireType.VARINT.value
                         serializer = LongVarintSerializer
+                        deserializer = LongVarintDeserializer
                     }
                 }
                 isRepeated = false
@@ -102,6 +112,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
             Float::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.FIXED32.value
                 serializer = FloatSerializer
+                deserializer = FloatDeserializer
                 isRepeated = false
                 isPacked = false
             }
@@ -109,6 +120,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
             Double::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.FIXED64.value
                 serializer = DoubleSerializer
+                deserializer = DoubleDeserializer
                 isRepeated = false
                 isPacked = false
             }
@@ -116,6 +128,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
             Boolean::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.VARINT.value
                 serializer = BooleanSerializer
+                deserializer = BooleanDeserializer
                 isRepeated = false
                 isPacked = false
             }
@@ -123,6 +136,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
             ByteArray::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                 serializer = ByteArraySerializer
+                deserializer = ByteArrayDeserializer
                 isRepeated = false
                 isPacked = false
             }
@@ -130,6 +144,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
             String::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                 serializer = StringSerializer
+                deserializer = StringDeserializer
                 isRepeated = false
                 isPacked = false
             }
@@ -167,6 +182,12 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                                 else -> IntNotPackedVarintSerializer
                             }
                         }
+                        deserializer = when (flag) {
+                            ProtoNumberFlag.FIXED -> IntRepeatedFixed32Deserializer
+                            ProtoNumberFlag.SIGNED -> IntRepeatedZigzagVarintDeserializer
+                            ProtoNumberFlag.FIXED or ProtoNumberFlag.SIGNED -> IntRepeatedZigzagFixed32Deserializer
+                            else -> IntRepeatedVarintDeserializer
+                        }
                     }
 
                     Long::class -> {
@@ -190,6 +211,12 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                                 else -> LongNotPackedVarintSerializer
                             }
                         }
+                        deserializer = when (flag) {
+                            ProtoNumberFlag.FIXED -> LongRepeatedFixed64Deserializer
+                            ProtoNumberFlag.SIGNED -> LongRepeatedZigzagVarintDeserializer
+                            ProtoNumberFlag.FIXED or ProtoNumberFlag.SIGNED -> LongRepeatedZigzagFixed64Deserializer
+                            else -> LongRepeatedVarintDeserializer
+                        }
                     }
 
                     Float::class -> {
@@ -200,6 +227,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                             writeTag = fieldNumber shl 3 or WireType.FIXED32.value
                             serializer = FloatNotPackedSerializer
                         }
+                        deserializer = FloatRepeatedDeserializer
                     }
 
                     Double::class -> {
@@ -210,6 +238,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                             writeTag = fieldNumber shl 3 or WireType.FIXED64.value
                             serializer = DoubleNotPackedSerializer
                         }
+                        deserializer = DoubleRepeatedDeserializer
                     }
 
                     Boolean::class -> {
@@ -220,16 +249,19 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                             writeTag = fieldNumber shl 3 or WireType.VARINT.value
                             serializer = BooleanNotPackedSerializer
                         }
+                        deserializer = BooleanRepeatedDeserializer
                     }
 
                     String::class -> {
                         writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                         serializer = StringRepeatedSerializer
+                        deserializer = StringRepeatedDeserializer
                     }
 
                     ByteArray::class -> {
                         writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                         serializer = ByteArrayRepeatedSerializer
+                        deserializer = ByteArrayRepeatedDeserializer
                     }
 
                     else -> {
@@ -237,6 +269,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                             writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                             @Suppress("UNCHECKED_CAST")
                             serializer = ProtoMessageRepeatedSerializer(genericType as KClass<ProtoMessage>)
+                            deserializer = ProtoMessageRepeatedDeserializer(genericType)
                         } else {
                             throw IllegalArgumentException("Field $fieldName is a List but has an unsupported generic type: $genericType")
                         }
@@ -261,6 +294,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
 
                 writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                 serializer = MapSerializer(keyClass as KClass<*>, valueClass as KClass<*>)
+                deserializer = MapDeserializer(keyClass, valueClass)
             }
 
             else -> {
@@ -269,6 +303,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                     writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                     @Suppress("UNCHECKED_CAST")
                     serializer = ProtoMessageSerializer(kPropertyReturnType as KClass<ProtoMessage>)
+                    deserializer = ProtoMessageDeserializer(kPropertyReturnType)
                     isRepeated = false
                     isPacked = false
                 } else {
