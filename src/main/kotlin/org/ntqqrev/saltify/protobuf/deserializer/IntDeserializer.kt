@@ -2,7 +2,6 @@
 
 package org.ntqqrev.saltify.protobuf.deserializer
 
-import org.ntqqrev.saltify.protobuf.ProtoMessage
 import org.ntqqrev.saltify.protobuf.model.WireType
 import org.ntqqrev.saltify.protobuf.util.CodedReader
 import org.ntqqrev.saltify.protobuf.util.unzigzag
@@ -12,7 +11,7 @@ internal object IntVarintDeserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
@@ -28,7 +27,7 @@ internal object IntFixed32Deserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
@@ -44,7 +43,7 @@ internal object IntZigzagVarintDeserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
@@ -60,7 +59,7 @@ internal object IntZigzagFixed32Deserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
@@ -76,7 +75,7 @@ internal object IntRepeatedVarintDeserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
@@ -103,7 +102,7 @@ internal object IntRepeatedFixed32Deserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
@@ -129,7 +128,7 @@ internal object IntRepeatedZigzagVarintDeserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
@@ -156,7 +155,7 @@ internal object IntRepeatedZigzagFixed32Deserializer : ProtoFieldDeserializer {
     override fun deserialize(
         reader: CodedReader,
         wireType: Int,
-        message: ProtoMessage,
+        message: Any,
         getter: MethodHandle,
         setter: MethodHandle
     ) {
