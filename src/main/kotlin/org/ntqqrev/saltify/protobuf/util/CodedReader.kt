@@ -2,6 +2,7 @@ package org.ntqqrev.saltify.protobuf.util
 
 internal abstract class CodedReader {
     abstract fun readByte(): Byte
+    abstract val bytesRead: Int
 
     fun readVarint32(): Int {
         var result = 0
