@@ -32,12 +32,12 @@ internal class ProtoModel<T : ProtoMessage>(val kClass: KClass<T>) {
         val constructor = kClass.constructors.firstOrNull()
             ?: throw IllegalArgumentException("No constructor found for class: $kClass")
         val paramsMap: Map<KParameter, () -> Any?> = constructor.parameters
+            .filter { !it.isOptional }
             .associateWith { it ->
                 if (it.type.isMarkedNullable) {
-                    return@associateWith { null }
-                }
-                else {
-                    return@associateWith when (it.type.classifier) {
+                    { null }
+                } else {
+                    when (it.type.classifier) {
                         String::class -> ({ "" })
                         Int::class -> ({ 0 })
                         Long::class -> ({ 0L })
