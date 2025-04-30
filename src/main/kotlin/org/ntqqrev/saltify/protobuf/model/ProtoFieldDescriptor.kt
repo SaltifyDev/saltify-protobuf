@@ -22,10 +22,10 @@ private val lookup = MethodHandles.lookup()
 internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable<ProtoFieldDescriptor> {
     val fieldName: String = kProperty.name
 
-    val field: Field = kProperty.javaField
+    val javaField: Field = kProperty.javaField
         ?: throw IllegalArgumentException("Field $fieldName is not a valid Java field")
 
-    val underlyingType: Class<*> = field.type
+    val underlyingJavaType: Class<*> = javaField.type
 
     val annotations = kProperty.javaField?.annotations
 
@@ -46,10 +46,10 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
     val deserializer: ProtoFieldDeserializer
 
     init {
-        field.trySetAccessible()
+        javaField.trySetAccessible()
 
-        when (underlyingType) {
-            Int::class.java, java.lang.Integer::class.java -> {
+        when (val kPropertyReturnType = kProperty.returnType.classifier) {
+            Int::class -> {
                 when (annotations?.filterIsInstance<ProtoNumberType>()?.firstOrNull()?.flag) {
                     ProtoNumberFlag.FIXED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED32.value
@@ -79,7 +79,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Long::class.java, java.lang.Long::class.java -> {
+            Long::class -> {
                 when (annotations?.filterIsInstance<ProtoNumberType>()?.firstOrNull()?.flag) {
                     ProtoNumberFlag.FIXED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED64.value
@@ -109,7 +109,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Float::class.java, java.lang.Float::class.java -> {
+            Float::class -> {
                 writeTag = fieldNumber shl 3 or WireType.FIXED32.value
                 serializer = FloatSerializer
                 deserializer = FloatDeserializer
@@ -117,7 +117,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Double::class.java, java.lang.Double::class.java -> {
+            Double::class -> {
                 writeTag = fieldNumber shl 3 or WireType.FIXED64.value
                 serializer = DoubleSerializer
                 deserializer = DoubleDeserializer
@@ -125,7 +125,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Boolean::class.java, java.lang.Boolean::class.java -> {
+            Boolean::class -> {
                 writeTag = fieldNumber shl 3 or WireType.VARINT.value
                 serializer = BooleanSerializer
                 deserializer = BooleanDeserializer
@@ -133,7 +133,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            ByteArray::class.java -> {
+            ByteArray::class -> {
                 writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                 serializer = ByteArraySerializer
                 deserializer = ByteArrayDeserializer
@@ -141,7 +141,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            String::class.java -> {
+            String::class -> {
                 writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                 serializer = StringSerializer
                 deserializer = StringDeserializer
@@ -149,7 +149,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            List::class.java -> {
+            List::class -> {
                 val genericType = kProperty.returnType.arguments.firstOrNull()?.type?.classifier
                 if (genericType == null) {
                     throw IllegalArgumentException("Field $fieldName is a List but has no generic type")
@@ -277,7 +277,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 }
             }
 
-            Map::class.java -> {
+            Map::class -> {
                 val genericTypes = kProperty.returnType.arguments
                 if (genericTypes.size != 2) {
                     throw IllegalArgumentException("Field $fieldName is a Map but has no generic types")
@@ -298,7 +298,6 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
             }
 
             else -> {
-                val kPropertyReturnType = kProperty.returnType.classifier
                 if (kPropertyReturnType is KClass<*> && kPropertyReturnType.isSubclassOf(ProtoMessage::class)) {
                     writeTag = fieldNumber shl 3 or WireType.LENGTH_DELIMITED.value
                     @Suppress("UNCHECKED_CAST")
@@ -307,7 +306,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                     isRepeated = false
                     isPacked = false
                 } else {
-                    throw IllegalArgumentException("Field $fieldName is not a supported type: $underlyingType")
+                    throw IllegalArgumentException("Field $fieldName is not a supported type: $underlyingJavaType")
                 }
             }
         }
