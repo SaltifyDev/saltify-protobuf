@@ -7,6 +7,8 @@ import org.ntqqrev.saltify.protobuf.annotation.ProtoField
 import org.ntqqrev.saltify.protobuf.annotation.ProtoIgnore
 import org.ntqqrev.saltify.protobuf.annotation.ProtoNumberFlag
 import org.ntqqrev.saltify.protobuf.annotation.ProtoNumberType
+import java.time.Instant
+import kotlin.reflect.full.declaredMemberProperties
 
 class FullCoverageTestMessage(
     @ProtoField(1)
@@ -245,5 +247,59 @@ fun main() {
     val repeatedEnd = System.currentTimeMillis()
     println("Repeated serialization in ${repeatedEnd - repeatedStart}ms")
 
-    println(serialized.toHexString())
+    System.gc()
+    Thread.sleep(1000)
+
+    val deserialized = ProtoBuf.deserialize<FullCoverageTestMessage>(serialized)
+
+    val deserializeStart = System.currentTimeMillis()
+    repeat(100000) {
+        ProtoBuf.deserialize<FullCoverageTestMessage>(serialized)
+    }
+    val deserializeEnd = System.currentTimeMillis()
+    println("Repeated deserialization in ${deserializeEnd - deserializeStart}ms")
+
+    println("Serialized:" + serialized.toHexString())
+    println("Deserialized:" + reflectionToString(deserialized))
+}
+
+// Use reflection to print the string representation of a class
+// Include the class name, package name, and all fields with their values
+fun reflectionToString(obj: Any, indent: Int = 1): String {
+    val className = obj::class.simpleName
+    val packageName = obj::class.qualifiedName?.substringBeforeLast('.')
+    val fields = obj::class.declaredMemberProperties
+        .joinToString(",\n") { f ->
+            "${
+                "    ".repeat(indent)
+            }${f.name}=${
+                when (val value = f.getter.call(obj)) {
+                    is ByteArray -> value.joinToString("") { it.toString(16) }
+                    is String -> "\"$value\""
+                    is Int, is Long, is Float, is Double, is Boolean, is Instant -> value.toString()
+                    is List<*> -> value.joinToString(", ", "[", "]") {
+                        when (it) {
+                            is ByteArray -> it.joinToString("") { byte -> byte.toString(16) }
+                            is String -> "\"$it\""
+                            is Int, is Long, is Float, is Double, is Boolean, is Instant -> it.toString()
+                            null -> "null"
+                            else -> reflectionToString(it, indent + 1)
+                        }
+                    }
+                    is Map<*, *> -> value.entries.joinToString(", ", "{", "}") {
+                        "${it.key}=${
+                            when (val mapValue = it.value) {
+                                is ByteArray -> mapValue.joinToString("") { byte -> byte.toString(16) }
+                                is String -> "\"$mapValue\""
+                                is Int, is Long, is Float, is Double, is Boolean, is Instant -> mapValue.toString()
+                                null -> "null"
+                                else -> reflectionToString(mapValue, indent + 1)
+                            }
+                        }"
+                    }
+                    null -> "null"
+                    else -> reflectionToString(value, indent + 1)
+                }
+            }" }
+    return "$packageName.$className(\n$fields\n${"    ".repeat(indent - 1)})"
 }
