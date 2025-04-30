@@ -1,5 +1,6 @@
 package org.ntqqrev.saltify.protobuf
 
+import org.ntqqrev.saltify.protobuf.util.ByteArrayCodedReader
 import org.ntqqrev.saltify.protobuf.util.ByteArrayCodedWriter
 import kotlin.reflect.KClass
 
@@ -12,5 +13,15 @@ object ProtoBuf {
         val writer = ByteArrayCodedWriter(size)
         model.write(writer, value)
         return writer.build()
+    }
+
+    inline fun <reified T : ProtoMessage> deserialize(bytes: ByteArray): T =
+        deserialize(T::class, bytes)
+
+    fun <T : ProtoMessage> deserialize(kClass: KClass<T>, bytes: ByteArray): T {
+        val model = Global.getProtoModel(kClass)
+        val reader = ByteArrayCodedReader(bytes)
+        val message = model.read(reader, bytes.size)
+        return message
     }
 }
