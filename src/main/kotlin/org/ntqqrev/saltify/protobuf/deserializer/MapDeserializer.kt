@@ -77,8 +77,8 @@ internal class MapDeserializer<K : Any, V : Any>(
     }
 
     class Entry(
-        val key: Any? = null,
-        val value: Any? = null,
+        var key: Any? = null,
+        var value: Any? = null,
     )
 
     companion object {
