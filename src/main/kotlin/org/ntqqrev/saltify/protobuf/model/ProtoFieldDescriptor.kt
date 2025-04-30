@@ -49,7 +49,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
         field.trySetAccessible()
 
         when (underlyingType) {
-            Int::class.java -> {
+            Int::class.java, java.lang.Integer::class.java -> {
                 when (annotations?.filterIsInstance<ProtoNumberType>()?.firstOrNull()?.flag) {
                     ProtoNumberFlag.FIXED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED32.value
@@ -79,7 +79,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Long::class.java -> {
+            Long::class.java, java.lang.Long::class.java -> {
                 when (annotations?.filterIsInstance<ProtoNumberType>()?.firstOrNull()?.flag) {
                     ProtoNumberFlag.FIXED -> {
                         writeTag = fieldNumber shl 3 or WireType.FIXED64.value
@@ -109,7 +109,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Float::class.java -> {
+            Float::class.java, java.lang.Float::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.FIXED32.value
                 serializer = FloatSerializer
                 deserializer = FloatDeserializer
@@ -117,7 +117,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Double::class.java -> {
+            Double::class.java, java.lang.Double::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.FIXED64.value
                 serializer = DoubleSerializer
                 deserializer = DoubleDeserializer
@@ -125,7 +125,7 @@ internal class ProtoFieldDescriptor(kProperty: KMutableProperty<*>) : Comparable
                 isPacked = false
             }
 
-            Boolean::class.java -> {
+            Boolean::class.java, java.lang.Boolean::class.java -> {
                 writeTag = fieldNumber shl 3 or WireType.VARINT.value
                 serializer = BooleanSerializer
                 deserializer = BooleanDeserializer

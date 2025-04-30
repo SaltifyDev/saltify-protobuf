@@ -12,7 +12,7 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.javaField
 
-internal class ProtoModel<T : ProtoMessage>(kClass: KClass<T>) {
+internal class ProtoModel<T : ProtoMessage>(val kClass: KClass<T>) {
     val descriptors: List<ProtoFieldDescriptor> =
         kClass.declaredMemberProperties
             .filter { property ->
@@ -89,14 +89,16 @@ internal class ProtoModel<T : ProtoMessage>(kClass: KClass<T>) {
         while (reader.bytesRead < end) {
             val (fieldNumber, wireType) = reader.readTag()
             val descriptor = descriptorsAsMap[fieldNumber]
-                ?: throw IllegalArgumentException("Unknown field number: $fieldNumber")
-            descriptor.deserializer.deserialize(
-                reader,
-                wireType,
-                message,
-                descriptor.getter,
-                descriptor.setter
-            )
+            if (descriptor != null)
+                descriptor.deserializer.deserialize(
+                    reader,
+                    wireType,
+                    message,
+                    descriptor.getter,
+                    descriptor.setter
+                )
+            else
+                reader.skipField(wireType)
         }
         return message
     }

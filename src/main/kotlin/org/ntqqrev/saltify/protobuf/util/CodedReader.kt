@@ -1,7 +1,10 @@
 package org.ntqqrev.saltify.protobuf.util
 
+import org.ntqqrev.saltify.protobuf.model.WireType
+
 internal abstract class CodedReader {
     abstract fun readByte(): Byte
+    abstract fun skip(bytes: Int)
     abstract val bytesRead: Int
 
     fun readVarint32(): Int {
@@ -76,5 +79,20 @@ internal abstract class CodedReader {
         val fieldNumber = tag ushr 3
         val wireType = tag and 0x7
         return Pair(fieldNumber, wireType)
+    }
+
+    fun skipField(wireType: Int) {
+        when (wireType) {
+            WireType.VARINT.value -> readVarint32()
+            WireType.FIXED64.value -> readFixed64()
+            WireType.LENGTH_DELIMITED.value -> {
+                val length = readVarint32()
+                skip(length)
+            }
+            // WireType.START_GROUP.value -> throw UnsupportedOperationException("START_GROUP not supported")
+            // WireType.END_GROUP.value -> throw UnsupportedOperationException("END_GROUP not supported")
+            WireType.FIXED32.value -> readFixed32()
+            else -> throw IllegalArgumentException("Invalid wire type: $wireType")
+        }
     }
 }

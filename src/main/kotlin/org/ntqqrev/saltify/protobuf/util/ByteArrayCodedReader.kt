@@ -7,6 +7,10 @@ internal class ByteArrayCodedReader(val byteArray: ByteArray) : CodedReader() {
         return byteArray[position++]
     }
 
+    override fun skip(bytes: Int) {
+        position += bytes
+    }
+
     override val bytesRead: Int
         get() = position
 }
