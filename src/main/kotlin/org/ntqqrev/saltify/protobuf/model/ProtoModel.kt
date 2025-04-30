@@ -31,26 +31,30 @@ internal class ProtoModel<T : ProtoMessage>(val kClass: KClass<T>) {
     init {
         val constructor = kClass.constructors.firstOrNull()
             ?: throw IllegalArgumentException("No constructor found for class: $kClass")
-        val paramsMap: Map<KParameter, () -> Any> = constructor.parameters
-            .filter { !it.isOptional }
+        val paramsMap: Map<KParameter, () -> Any?> = constructor.parameters
             .associateWith { it ->
-                when (it.type.classifier) {
-                    String::class -> ({ "" })
-                    Int::class -> ({ 0 })
-                    Long::class -> ({ 0L })
-                    Float::class -> ({ 0f })
-                    Double::class -> ({ 0.0 })
-                    Boolean::class -> ({ false })
-                    ByteArray::class -> ({ ByteArray(0) })
-                    List::class -> ({ mutableListOf<Any>() })
-                    Map::class -> ({ mutableMapOf<Any, Any>() })
-                    else -> {
-                        val cls = it.type.classifier as? KClass<*>
-                        if (cls != null && cls.isSubclassOf(ProtoMessage::class)) {
-                            @Suppress("UNCHECKED_CAST")
-                            Global.getProtoModel(cls as KClass<ProtoMessage>).instanceFactory
-                        } else {
-                            throw IllegalArgumentException("Unsupported type: ${it.type}")
+                if (it.type.isMarkedNullable) {
+                    return@associateWith { null }
+                }
+                else {
+                    return@associateWith when (it.type.classifier) {
+                        String::class -> ({ "" })
+                        Int::class -> ({ 0 })
+                        Long::class -> ({ 0L })
+                        Float::class -> ({ 0f })
+                        Double::class -> ({ 0.0 })
+                        Boolean::class -> ({ false })
+                        ByteArray::class -> ({ ByteArray(0) })
+                        List::class -> ({ mutableListOf<Any>() })
+                        Map::class -> ({ mutableMapOf<Any, Any>() })
+                        else -> {
+                            val cls = it.type.classifier as? KClass<*>
+                            if (cls != null && cls.isSubclassOf(ProtoMessage::class)) {
+                                @Suppress("UNCHECKED_CAST")
+                                Global.getProtoModel(cls as KClass<ProtoMessage>).instanceFactory
+                            } else {
+                                throw IllegalArgumentException("Unsupported type: ${it.type}")
+                            }
                         }
                     }
                 }
