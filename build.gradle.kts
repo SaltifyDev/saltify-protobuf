@@ -1,8 +1,10 @@
 plugins {
     kotlin("jvm") version "2.1.20"
+    `java-library`
+    `maven-publish`
 }
 
-group = "org.ntqqrev.saltify"
+group = "com.github.SaltifyDev"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -20,4 +22,20 @@ tasks.test {
 
 kotlin {
     jvmToolchain(21)
+}
+
+java {
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            groupId = project.group.toString()
+            version = project.version.toString()
+            artifactId = rootProject.name
+
+            from(components["java"])
+        }
+    }
 }
