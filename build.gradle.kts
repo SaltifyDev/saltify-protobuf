@@ -4,8 +4,8 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.SaltifyDev"
-version = "1.0-SNAPSHOT"
+group = "org.ntqqrev.saltify"
+version = "0.1.0"
 
 repositories {
     mavenCentral()
